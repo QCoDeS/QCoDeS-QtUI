@@ -41,8 +41,9 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
 
         # create plot
         self.fig = plt.figure()
-        self.axes = self.fig.add_subplot(111)
-        self.draw3DData(self.axes)
+        self.axes = dict()
+        self.axes['main'] = self.fig.add_subplot(111)
+        self.draw3DData(self.axes['main'])
 
         FigureCanvas.__init__(self, self.fig)
         FigureCanvas.setSizePolicy(self,
@@ -53,10 +54,9 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
 
         if tools is not None:
             for id in tools.keys():
-                tools[id].triggered.connect(lambda: self.onToolSelect(id))
+                tools[id].triggered.connect(lambda: self.onToolChange(id))
 
         self._lines = []
-        self._datacursor = []
         self._cid = 0
         self._XSection = (0,0)
         self._creatingCustomXSection = False
@@ -69,7 +69,6 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
         self._customXPoints = None
         self._customYPoints = None
         self._crossSections = []
-        self._followCursor = False
         self._cursors = []
 
         # hbox = QtWidgets.QHBoxLayout()
@@ -125,31 +124,6 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
         # vbox.addWidget(self.saveybtn)
 
         # hbox.addLayout(vbox)
-    def onToolSelect(self, id):
-        self.tool = id
-        if id== 'OrthoXSection':
-            self.remove_plots()
-            self.fig.clear()
-
-            self.ax = np.empty((2, 2), dtype='O')
-            self.ax[0, 0] = self.fig.add_subplot(2, 2, 1)
-            self.ax[0, 1] = self.fig.add_subplot(2, 2, 2)
-            self.ax[1, 0] = self.fig.add_subplot(2, 2, 3)
-            self.ax[1, 1] = self.fig.add_subplot(2, 2, 4)
-            # self._cid = self.fig.canvas.mpl_connect('button_press_event', self._onMouseUp)
-            self._cursor = Cursor(self.ax[0, 0], useblit=True, color='black')
-            self._followCursor = True
-            self.draw3DData(self.ax[0,0])
-            # self.fig.tight_layout(rect=figure_rect)
-            self.fig.canvas.draw_idle()
-
-            # rewire events
-            # TODO: implement signals in a clean way
-            if self._cid:
-                self.fig.canvas.mpl_disconnect(self._cid)
-            self._cid = self.fig.canvas.mpl_connect('motion_notify_event', self._onMouseMove)
-            self._cid = self.fig.canvas.mpl_connect('button_press_event', self._onMouseDown)
-            self.fig.canvas.mpl_connect('key_press_event', self._onKeyPress)
 
 
     @staticmethod
@@ -232,26 +206,6 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
 
     # def _create_subplots(self):
 
-
-    def toggle_cross(self):
-        pass
-
-    def draw3DData(self, ax):
-        ax.pcolormesh(self.traces[0]['config']['x'],
-                      self.traces[0]['config']['y'],
-                      self.traces[0]['config']['z'],
-                      edgecolor='face')
-        self._update_label(ax, 'x', self.traces[0]['config']['xlabel'])
-        self._update_label(ax, 'y', self.traces[0]['config']['ylabel'])
-        ax.yaxis.get_major_formatter().set_powerlimits((0,0))
-
-
-    def toggle_customSection(self):
-        if self.customSectionBtn.isChecked():
-            self._creatingCustomXSection = True
-        else:
-            self._creatingCustomXSection = False
-
     def toggle_sum(self):
         self.remove_plots()
         if not self.crossbtn.isChecked():
@@ -278,7 +232,7 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
                                                   color='C0',
                                                   marker='.')[0])
             self.ax[1, 0].set_title("")
-            self._datacursor = mplcursors.cursor(self._lines, multiple=False)
+            # self._datacursor = mplcursors.cursor(self._lines, multiple=False)
         else:
             self._cursor.set_active(True)
             self._update_label(self.ax[1, 0], 'x', self.traces[0]['config']['xlabel'])
@@ -296,60 +250,93 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
     def remove_plots(self):
         for line in self._lines:
             line.remove()
+        for key,ax in self.axes.items():
+            ax.clear()
+        self.axes = dict()
         self._lines = []
-        if self._datacursor:
-            self._datacursor.remove()
+        # if self._datacursor:
+        #     self._datacursor.remove()
 
     def _addXSectionPlots(self):
-        self.remove_plots()
-        self._lines.append(self.ax[0, 1].plot(self.traces[0]['config']['z'][:,self._XSection[0]],
-                                                self.traces[0]['config']['yaxis'],
-                                                color='C0',
-                                                marker='.')[0])
-        xlabel, xunit = self._get_label_and_unit(self.traces[0]['config']['xlabel'])
-        self.ax[0, 1].set_title("{} = {:.2n} {} ".format(xlabel, self.traces[0]['config']['xaxis'][self._XSection[0]], xunit),
-                                fontsize='small')
-        self.traces[0]['config']['xpos'] = self.traces[0]['config']['xaxis'][self._XSection[0]]
-        self._lines.append(self.ax[1, 0].plot(self.traces[0]['config']['xaxis'],
-                                                self.traces[0]['config']['z'][self._XSection[1], :],
-                                                color='C0',
-                                                marker='.')[0])
-        ylabel, yunit = self._get_label_and_unit(self.traces[0]['config']['ylabel'])
-        self.ax[1, 0].set_title("{} = {:.2n} {}".format(ylabel, self.traces[0]['config']['yaxis'][self._XSection[1]], yunit),
-                                fontsize='small')
+        # self.remove_plots()
+        # x means cut parrallel to x axes at a given y value, lower plot
+        # y is first index in traces
+        ax = self.axes['x'] 
+        ax.yaxis.get_major_formatter().set_powerlimits((0,0))
+        self._lines.append(ax.plot(self.traces[0]['config']['xaxis'],
+                                   self.traces[0]['config']['z'][self._XSection[1], :],
+                                   color='C0',
+                                   marker='.')[0])
+        self._update_label(ax, 'x', self.traces[0]['config']['xlabel'])
+        self._update_label(ax, 'y', self.traces[0]['config']['zlabel'])
         self.traces[0]['config']['ypos'] = self.traces[0]['config']['yaxis'][self._XSection[1]]
-        self.ax[1,0].yaxis.get_major_formatter().set_powerlimits((0,0))
-        self.ax[0,1].yaxis.get_major_formatter().set_powerlimits((0,0))
+        theMax = self.traces[0]['config']['z'].ravel().max() * 1.05
+        theMin = self.traces[0]['config']['z'].ravel().min() * 1.05
+        ax.set_ylim(theMin, theMax)
 
-    def _getAxisCoordinatesFromEvent(self, event):
-        xpos = (abs(self.traces[0]['config']['xaxis'] - event.xdata)).argmin()
-        ypos = (abs(self.traces[0]['config']['yaxis'] - event.ydata)).argmin()
-        return [xpos, ypos]
+        # y means cut parrallel to y axes at a given x value, right plot
+        # x is second index in traces
+        ax = self.axes['y'] # y means cut parrallel to y axes, as 
+        ax.yaxis.get_major_formatter().set_powerlimits((0,0))
+        self._lines.append(ax.plot(self.traces[0]['config']['z'][:,self._XSection[0]],
+                                   self.traces[0]['config']['yaxis'],
+                                   color='C0',
+                                   marker='.')[0])
+        self._update_label(ax, 'y', self.traces[0]['config']['ylabel'])
+        self._update_label(ax, 'x', self.traces[0]['config']['zlabel'])
+        self.traces[0]['config']['xpos'] = self.traces[0]['config']['yaxis'][self._XSection[0]]
+        sum = self.traces[0]['config']['z'].sum(axis=0) * 1.05
+        ax.set_xlim(theMin, theMax)
+
+        self._updateXSections()
+
 
     def _updateXSections(self):
         if not self._lines:
             self._addXSectionPlots()
         else:
-            self._lines[0].set_xdata(self.traces[0]['config']['z'][:, self._XSection[0]])
-            self._lines[1].set_ydata(self.traces[0]['config']['z'][self._XSection[1], :])
-        self.ax[0,1].relim()
-        self.ax[0,1].autoscale_view()
-        self.ax[1,0].relim()
-        self.ax[1,0].autoscale_view()
-        xlabel, xunit = self._get_label_and_unit(self.traces[0]['config']['xlabel'])
-        ylabel, yunit = self._get_label_and_unit(self.traces[0]['config']['ylabel'])
-        self.ax[0,1].set_title("{} = {:.2n} {} ".format(xlabel, self.traces[0]['config']['xaxis'][self._XSection[0]], xunit),
-                                fontsize='small')
-        self.ax[1,0].set_title("{} = {:.2n} {}".format(ylabel, self.traces[0]['config']['yaxis'][self._XSection[1]], yunit),
-                                fontsize='small')
-        self._datacursor = mplcursors.cursor(self._lines, multiple=False)
+            # lines[0] is parallel x axes, so y values change for a given ypos
+            self._lines[0].set_ydata(self.traces[0]['config']['z'][self._XSection[1], :])
+            self._lines[1].set_xdata(self.traces[0]['config']['z'][:, self._XSection[0]])
+        for i,d in enumerate(['x', 'y']):
+            # self.axes[d].relim()
+            # self.axes[d].autoscale_view()
+            label, unit = self._get_label_and_unit(self.traces[0]['config'][d+'label'])
+            self.axes[d].set_title("{} = {:.2n} {} ".format(
+                label, self.traces[0]['config'][d+'axis'][self._XSection[i]], unit),
+                                   fontsize='small')
+        # self._datacursor = mplcursor.cursor(self._lines, multiple=False)
         self.fig.canvas.draw_idle()
+
+    def draw3DData(self, ax):
+        ax.pcolormesh(self.traces[0]['config']['x'],
+                      self.traces[0]['config']['y'],
+                      self.traces[0]['config']['z'],
+                      edgecolor='face')
+        self._update_label(ax, 'x', self.traces[0]['config']['xlabel'])
+        self._update_label(ax, 'y', self.traces[0]['config']['ylabel'])
+        ax.yaxis.get_major_formatter().set_powerlimits((0,0))
+
+    def drawCustomXSection(self, ax):
+        ax.set_xlim((min(self._customXPoints),max(self._customXPoints)))
+        ax.plot(self._customXPoints,self._customYPoints, color='C0')
+        ax.set_title('Multiparameter Crossection', fontsize='small')
+
+    def drawCustomXSectionOn3DData(self, ax):
+        return ax.plot(self._customLine[:,0],self._customLine[:,1], 'r+-')[0]
+
+    # Coordinate transformations
+    def _getAxisCoordinatesFromEvent(self, event):
+        xpos = (abs(self.traces[0]['config']['xaxis'] - event.xdata)).argmin()
+        ypos = (abs(self.traces[0]['config']['yaxis'] - event.ydata)).argmin()
+        return [xpos, ypos]
 
     def _index2data(self, index):
         x = self.traces[0]['config']['xaxis'][index[0]]
         y = self.traces[0]['config']['yaxis'][index[1]]
         return (x,y)
 
+    # events
     def _updateCursor(self):
         x,y  = self._index2data(self._XSection)
         # print(x)
@@ -358,14 +345,38 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
             self._cursors[0].remove()
             self._cursors[1].remove()
             self._cursors = []
-        self._cursors.append(self.ax[0,0].axhline(y=y, zorder=20))
-        self._cursors.append(self.ax[0,0].axvline(x=x, zorder=20))
-        self.fig.canvas.draw_idle()
+        # self._cursors.append(self.ax[0,0].axhline(y=y, zorder=20))
+        # self._cursors.append(self.ax[0,0].axvline(x=x, zorder=20))
+        # self.fig.canvas.draw_idle()
+
+    def onToolChange(self, id):
+        self.tool = id
+        if id== 'OrthoXSection':
+            self.remove_plots()
+            self.fig.clear()
+
+            self.axes['main'] = self.fig.add_subplot(2, 2, 1)
+            self.axes['x']= self.fig.add_subplot(2, 2, 3)
+            self.axes['y'] = self.fig.add_subplot(2, 2, 2)
+            self._addXSectionPlots()
+
+            self._cursor = Cursor(self.axes['main'], useblit=True, color='black')
+            self.draw3DData(self.axes['main'])
+            self.fig.tight_layout()
+            self.fig.canvas.draw_idle()
+
+            # rewire events
+            # TODO: implement signals in a clean way
+            if self._cid:
+                self.fig.canvas.mpl_disconnect(self._cid)
+            self._cid = self.fig.canvas.mpl_connect('motion_notify_event', self._onMouseMove)
+            self._cid = self.fig.canvas.mpl_connect('button_press_event', self._onMouseDown)
+            self.fig.canvas.mpl_connect('key_press_event', self._onKeyPress)
 
     def _onMouseMove(self, event):
-        if event.inaxes == self.ax[0, 0] and not self.sumbtn.isChecked():
+        if event.inaxes == self.axes['main']:
             pos = self._getAxisCoordinatesFromEvent(event)
-            if self._followCursor:
+            if self.tool == 'OrthoXSection':
                 self._XSection = pos
                 self._updateXSections()
 
@@ -433,15 +444,7 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
                     self._XSection = pos
                     self._updateCursor()
                     self._updateXSections()
-                    self._followCursor = False
 
-    def drawCustomXSection(self, ax):
-        ax.set_xlim((min(self._customXPoints),max(self._customXPoints)))
-        ax.plot(self._customXPoints,self._customYPoints, color='C0')
-        ax.set_title('Multiparameter Crossection', fontsize='small')
-
-    def drawCustomXSectionOn3DData(self, ax):
-        return ax.plot(self._customLine[:,0],self._customLine[:,1], 'r+-')[0]
 
     def _onKeyPress(self, event):
         if self._creatingCustomXSection:
@@ -460,3 +463,4 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
 
     def _onCustomSection(self, eclick, erelease):
         pass
+
