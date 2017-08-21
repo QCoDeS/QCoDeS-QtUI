@@ -5,6 +5,7 @@ from qcodes.plots.base import BasePlot
 import matplotlib
 matplotlib.use("QT5Agg")
 from matplotlib.widgets import Cursor
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.ticker import FormatStrFormatter
 from matplotlib.widgets import RectangleSelector
 import matplotlib.pyplot as plt
@@ -19,10 +20,12 @@ import numpy as np
 from PyQt5 import QtWidgets
 
 
-class CrossSectionWidget(BasePlot):
+class CrossSectionWidget(FigureCanvas, BasePlot):
 
-    def __init__(self, dataset):
-        super().__init__()
+    def __init__(self, dataset, tools=None):
+        # handle data
+        BasePlot.__init__(self)
+
         data = {}
         self.expand_trace(args=[dataset], kwargs=data)
         self.traces = []
@@ -35,7 +38,22 @@ class CrossSectionWidget(BasePlot):
         self.traces.append({
             'config': data,
         })
+
+        # create plot
         self.fig = plt.figure()
+        self.axes = self.fig.add_subplot(111)
+        self.draw3DData(self.axes)
+
+        FigureCanvas.__init__(self, self.fig)
+        FigureCanvas.setSizePolicy(self,
+                                   QtWidgets.QSizePolicy.Expanding,
+                                   QtWidgets.QSizePolicy.Expanding)
+        FigureCanvas.updateGeometry(self)
+
+
+        if tools is not None:
+            for id in tools.keys():
+                tools[id].triggered.connect(lambda: self.onToolSelect(id))
 
         self._lines = []
         self._datacursor = []
@@ -54,59 +72,85 @@ class CrossSectionWidget(BasePlot):
         self._followCursor = False
         self._cursors = []
 
-        hbox = QtWidgets.QHBoxLayout()
-        self.fig.canvas.setLayout(hbox)
-        hspace = QtWidgets.QSpacerItem(0,
-                                       0,
-                                       QtWidgets.QSizePolicy.Expanding,
-                                       QtWidgets.QSizePolicy.Expanding)
-        vspace = QtWidgets.QSpacerItem(0,
-                                       0,
-                                       QtWidgets.QSizePolicy.Minimum,
-                                       QtWidgets.QSizePolicy.Expanding)
-        hbox.addItem(hspace)
+        # hbox = QtWidgets.QHBoxLayout()
+        # self.fig.canvas.setLayout(hbox)
+        # hspace = QtWidgets.QSpacerItem(0,
+        #                                0,
+        #                                QtWidgets.QSizePolicy.Expanding,
+        #                                QtWidgets.QSizePolicy.Expanding)
+        # vspace = QtWidgets.QSpacerItem(0,
+        #                                0,
+        #                                QtWidgets.QSizePolicy.Minimum,
+        #                                QtWidgets.QSizePolicy.Expanding)
+        # hbox.addItem(hspace)
 
-        vbox = QtWidgets.QVBoxLayout()
-        self.crossbtn = QtWidgets.QCheckBox('Cross section')
-        self.crossbtn.setToolTip("Display extra subplots with selectable cross sections "
-                                 "or sums along axis.")
-        self.customSectionBtn = QtWidgets.QCheckBox('custom cross section')
-        # self.customSectionBtn.setToolTip("Display extra subplots with selectable cross sections "
-                                 # "or sums along axis.")
-        self.sumbtn = QtWidgets.QCheckBox('Sum')
-        self.sumbtn.setToolTip("Display sums or cross sections.")
+        # vbox = QtWidgets.QVBoxLayout()
+        # self.crossbtn = QtWidgets.QCheckBox('Cross section')
+        # self.crossbtn.setToolTip("Display extra subplots with selectable cross",
+        #                          "sections or sums along axis.")
+        # self.customSectionBtn = QtWidgets.QCheckBox('custom cross section')
+        # # self.customSectionBtn.setToolTip("Display extra subplots with selectable cross sections "
+        #                          # "or sums along axis.")
+        # self.sumbtn = QtWidgets.QCheckBox('Sum')
+        # self.sumbtn.setToolTip("Display sums or cross sections.")
 
-        self.savehmbtn = QtWidgets.QPushButton('Save Heatmap')
-        self.savehmbtn.setToolTip("Save heatmap as a file (PDF)")
-        self.savexbtn = QtWidgets.QPushButton('Save Vert')
-        self.savexbtn.setToolTip("Save vertical cross section or sum as a file (PDF)")
-        self.saveybtn = QtWidgets.QPushButton('Save Horz')
-        self.savexbtn.setToolTip("Save horizontal cross section or sum as a file (PDF)")
+        # self.savehmbtn = QtWidgets.QPushButton('Save Heatmap')
+        # self.savehmbtn.setToolTip("Save heatmap as a file (PDF)")
+        # self.savexbtn = QtWidgets.QPushButton('Save Vert')
+        # self.savexbtn.setToolTip("Save vertical cross section or sum as a file (PDF)")
+        # self.saveybtn = QtWidgets.QPushButton('Save Horz')
+        # self.savexbtn.setToolTip("Save horizontal cross section or sum as a file (PDF)")
 
-        self.crossbtn.toggled.connect(self.toggle_cross)
-        self.customSectionBtn.toggled.connect(self.toggle_customSection)
-        self.sumbtn.toggled.connect(self.toggle_sum)
+        # self.crossbtn.toggled.connect(self.toggle_cross)
+        # self.customSectionBtn.toggled.connect(self.toggle_customSection)
+        # self.sumbtn.toggled.connect(self.toggle_sum)
 
-        self.savehmbtn.pressed.connect(self.save_heatmap)
-        self.savexbtn.pressed.connect(self.save_subplot_x)
-        self.saveybtn.pressed.connect(self.save_subplot_y)
-        # Save custom cross section button
-        self.customCrossSectionBtn = QtWidgets.QPushButton('save custom x-section')
-        self.customCrossSectionBtn.pressed.connect(self.save_custom_x_section)
-        vbox.addWidget(self.customCrossSectionBtn)
+        # self.savehmbtn.pressed.connect(self.save_heatmap)
+        # self.savexbtn.pressed.connect(self.save_subplot_x)
+        # self.saveybtn.pressed.connect(self.save_subplot_y)
+        # # Save custom cross section button
+        # self.customCrossSectionBtn = QtWidgets.QPushButton('save custom x-section')
+        # self.customCrossSectionBtn.pressed.connect(self.save_custom_x_section)
+        # vbox.addWidget(self.customCrossSectionBtn)
 
-        self.toggle_cross()
-        self.toggle_sum()
+        # self.toggle_cross()
+        # self.toggle_sum()
 
-        vbox.addItem(vspace)
-        vbox.addWidget(self.crossbtn)
-        vbox.addWidget(self.customSectionBtn)
-        vbox.addWidget(self.sumbtn)
-        vbox.addWidget(self.savehmbtn)
-        vbox.addWidget(self.savexbtn)
-        vbox.addWidget(self.saveybtn)
+        # vbox.addItem(vspace)
+        # vbox.addWidget(self.crossbtn)
+        # vbox.addWidget(self.customSectionBtn)
+        # vbox.addWidget(self.sumbtn)
+        # vbox.addWidget(self.savehmbtn)
+        # vbox.addWidget(self.savexbtn)
+        # vbox.addWidget(self.saveybtn)
 
-        hbox.addLayout(vbox)
+        # hbox.addLayout(vbox)
+    def onToolSelect(self, id):
+        self.tool = id
+        if id== 'OrthoXSection':
+            self.remove_plots()
+            self.fig.clear()
+
+            self.ax = np.empty((2, 2), dtype='O')
+            self.ax[0, 0] = self.fig.add_subplot(2, 2, 1)
+            self.ax[0, 1] = self.fig.add_subplot(2, 2, 2)
+            self.ax[1, 0] = self.fig.add_subplot(2, 2, 3)
+            self.ax[1, 1] = self.fig.add_subplot(2, 2, 4)
+            # self._cid = self.fig.canvas.mpl_connect('button_press_event', self._onMouseUp)
+            self._cursor = Cursor(self.ax[0, 0], useblit=True, color='black')
+            self._followCursor = True
+            self.draw3DData(self.ax[0,0])
+            # self.fig.tight_layout(rect=figure_rect)
+            self.fig.canvas.draw_idle()
+
+            # rewire events
+            # TODO: implement signals in a clean way
+            if self._cid:
+                self.fig.canvas.mpl_disconnect(self._cid)
+            self._cid = self.fig.canvas.mpl_connect('motion_notify_event', self._onMouseMove)
+            self._cid = self.fig.canvas.mpl_connect('button_press_event', self._onMouseDown)
+            self.fig.canvas.mpl_connect('key_press_event', self._onKeyPress)
+
 
     @staticmethod
     def full_extent(ax, pad=0.0):
@@ -134,7 +178,8 @@ class CrossSectionWidget(BasePlot):
 
 
     def save_subplot(self, axnumber, savename, saveformat='pdf'):
-        extent = self.full_extent(self.ax[axnumber]).transformed(self.fig.dpi_scale_trans.inverted())
+        extent = self.full_extent(self.ax[axnumber]).transformed(
+            self.fig.dpi_scale_trans.inverted())
         full_title = "{}.{}".format(savename, saveformat)
         self.fig.savefig(full_title, bbox_inches=extent)
 
@@ -189,37 +234,7 @@ class CrossSectionWidget(BasePlot):
 
 
     def toggle_cross(self):
-        self.remove_plots()
-        self.fig.clear()
-        if self._cid:
-            self.fig.canvas.mpl_disconnect(self._cid)
-        if self.crossbtn.isChecked():
-            self.sumbtn.setEnabled(True)
-            self.savexbtn.setEnabled(True)
-            self.saveybtn.setEnabled(True)
-            self.ax = np.empty((2, 2), dtype='O')
-            self.ax[0, 0] = self.fig.add_subplot(2, 2, 1)
-            self.ax[0, 1] = self.fig.add_subplot(2, 2, 2)
-            self.ax[1, 0] = self.fig.add_subplot(2, 2, 3)
-            self.ax[1, 1] = self.fig.add_subplot(2, 2, 4)
-            self._cid = self.fig.canvas.mpl_connect('motion_notify_event', self._onMouseMove)
-            self._cid = self.fig.canvas.mpl_connect('button_press_event', self._onMouseDown)
-            self.fig.canvas.mpl_connect('key_press_event', self._onKeyPress)
-            # self._cid = self.fig.canvas.mpl_connect('button_press_event', self._onMouseUp)
-            self._cursor = Cursor(self.ax[0, 0], useblit=True, color='black')
-            self._followCursor = True
-            self.toggle_sum()
-            figure_rect = (0, 0.0, 0.75, 1)
-        else:
-            self.sumbtn.setEnabled(False)
-            self.savexbtn.setEnabled(False)
-            self.saveybtn.setEnabled(False)
-            self.ax = np.empty((1, 1), dtype='O')
-            self.ax[0, 0] = self.fig.add_subplot(1, 1, 1)
-            figure_rect = (0, 0.0, 0.75, 1)
-        self.draw3DData(self.ax[0,0])
-        self.fig.tight_layout(rect=figure_rect)
-        self.fig.canvas.draw_idle()
+        pass
 
     def draw3DData(self, ax):
         ax.pcolormesh(self.traces[0]['config']['x'],

@@ -8,14 +8,19 @@ from qcodes.utils.wrappers import do1d, do2d, do1dDiagonal, init
 from qcodes.plots.qcmatplotlib_viewer_widget import *
 from qcodes.data.data_array import DataArray
 
-# ugly way of importing QCoDeS-QtUI module
+# importing QCoDeS-QtUI module
+# for this example file the package path is added temporarily to the python path
+# for use in Spyder add qcqtui to your search path with the package manager
 import sys
 import os
 sys.path.append(os.path.join('../..',''))
 from qcqtui.widgets.xsection import CrossSectionWidget
+from qcqtui.app import ApplicationWindow
 
-dac = DummyInstrument(name="dac", gates=['ch1', 'ch2'])  # The DAC voltage source
-dmm = DummyInstrument(name="dmm", gates=['voltage', 'current'])  # The DMM reader
+# The DAC voltage source
+dac = DummyInstrument(name="dac", gates=['ch1', 'ch2'])
+# The DMM reader
+dmm = DummyInstrument(name="dmm", gates=['voltage', 'current'])  
 
 import random
 dmm.voltage.get =  lambda: random.randint(0, 100)
@@ -40,6 +45,8 @@ z = (1 - x / 2. + x ** 5 + y ** 3) * np.exp(-x ** 2 - y ** 2)
 # set the test data to the sample dataset
 data.dmm_voltage.ndarray = z
 
-# create widget
-cw = CrossSectionWidget(data.dmm_voltage)
-cw.fig.show()
+# create App
+qApp = QtWidgets.QApplication(sys.argv)
+aw = ApplicationWindow(data.dmm_voltage)
+aw.show()
+# sys.exit(qApp.exec_())
