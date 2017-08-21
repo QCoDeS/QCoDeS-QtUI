@@ -19,7 +19,7 @@ import numpy as np
 from PyQt5 import QtWidgets
 
 
-class ClickWidget(BasePlot):
+class CrossSectionWidget(BasePlot):
 
     def __init__(self, dataset):
         super().__init__()
