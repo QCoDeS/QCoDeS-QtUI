@@ -47,6 +47,7 @@ data.dmm_voltage.ndarray = z
 
 # create App
 qApp = QtWidgets.QApplication(sys.argv)
+qApp.setStyle('fusion')
 aw = ApplicationWindow(data.dmm_voltage)
 aw.show()
 # sys.exit(qApp.exec_())

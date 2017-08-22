@@ -47,6 +47,8 @@ progname = os.path.basename(sys.argv[0])
 
 #     def compute_initial_figure(self):
 #         pass
+def getImageResourcePath(resource):
+    return os.path.join(os.path.dirname(os.path.realpath(__file__)), '../data/', resource)
 
 
 class ApplicationWindow(QMainWindow):
@@ -57,10 +59,19 @@ class ApplicationWindow(QMainWindow):
         # Main Window
         self.setWindowTitle("QCoDeS Qt Ui")
 
+        # Actions
+        quit_action = QAction(QIcon(getImageResourcePath('quit.png')), 'Quit' , self)
+        quit_action.setShortcut('Ctrl+q')
+        quit_action.triggered.connect(self.onQuit)
+
+        about_action = QAction(QIcon(getImageResourcePath('about.png')), 'About' , self)
+        about_action.triggered.connect(self.onAbout)
+
         # Menus
         # File
         self.file_menu = QtWidgets.QMenu('&File', self)
         self.menuBar().addMenu(self.file_menu)
+        self.file_menu.addAction(quit_action)
         # Tools
         tool_menu = QtWidgets.QMenu('&Tools', self)
         self.menuBar().addMenu(tool_menu)
@@ -69,36 +80,31 @@ class ApplicationWindow(QMainWindow):
         self.help_menu = QtWidgets.QMenu('&Help', self)
         self.menuBar().addSeparator()
         self.menuBar().addMenu(self.help_menu)
-        self.help_menu.addAction('&About', self.about)
+        self.help_menu.addAction(about_action)
 
         # toolbars
         toolbar = self.addToolBar('Tools')
 
         # Tools
         tools = dict()
-        def addTool(id, action, name, shortcut, tip, **kwargs):
+        def addTool(id,  name, shortcut, tip, **kwargs):
             if 'icon' in kwargs.keys():
                 tools[id] =  QAction(kwargs['icon'], name, self)
             else:
                 tools[id] =  QAction(name, self)
             tools[id].setShortcut(shortcut)
             tools[id].setStatusTip(tip)
-            tools[id].triggered.connect(action)
             toolbar.addAction(tools[id])
             tool_menu.addAction(tools[id])
-            # if 'menu' in kwargs.keys():
-            #     kwargs['menu'].addAction(tools[id])
-            # if 'toolbar' in kwargs.keys():
-            #     kwargs['toolbar'].addAction(tools[id])
 
         imagepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../data/crosshair.png')
-        addTool('OrthoXSection', self.test,
-                'Orthorgonal cross section', 'Ctrl+o',
-                'The orthorgonal cross section tool creates a profile of the data at a given point', icon=QIcon(imagepath))
-        print(imagepath)
-
-        #5f8cba
-
+        addTool('OrthoXSection', 'Orthorgonal cross section', 'Ctrl+o',
+                'The orthorgonal cross section tool creates a profile of the data at a given point',
+                icon=QIcon(imagepath))
+        imagepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../data/customXSection.png')
+        addTool('CustomXSection', 'Custom cross section', 'Ctrl+u',
+                'The custom cross section tool creates a profile of the data between two given points',
+                icon=QIcon(imagepath))
 
         # Main Widget
         self.main_widget = QtWidgets.QWidget(self)
@@ -110,16 +116,15 @@ class ApplicationWindow(QMainWindow):
         self.main_widget.setFocus()
         self.setCentralWidget(self.main_widget)
 
-        self.statusBar().showMessage("All hail matplotlib!", 2000)
-    def test(self):
-        print('test')
-    def fileQuit(self):
+        self.statusBar().showMessage("Starting", 2000)
+
+    def onQuit(self):
         self.close()
 
     def closeEvent(self, ce):
         self.fileQuit()
 
-    def about(self):
+    def onAbout(self):
         QtWidgets.QMessageBox.about(self, "About", "QCoDeS Qt Ui v0.1" )
 
 
