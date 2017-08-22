@@ -57,7 +57,7 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
                 tools[id].triggered.connect(lambda: self.onToolChange(id))
 
         self._lines = []
-        self._cid = 0
+        self.eventIDs = dict()
         self._XSection = (0,0)
         self._creatingCustomXSection = False
         self._drawingLine = False
@@ -70,61 +70,6 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
         self._customYPoints = None
         self._crossSections = []
         self._cursors = []
-
-        # hbox = QtWidgets.QHBoxLayout()
-        # self.fig.canvas.setLayout(hbox)
-        # hspace = QtWidgets.QSpacerItem(0,
-        #                                0,
-        #                                QtWidgets.QSizePolicy.Expanding,
-        #                                QtWidgets.QSizePolicy.Expanding)
-        # vspace = QtWidgets.QSpacerItem(0,
-        #                                0,
-        #                                QtWidgets.QSizePolicy.Minimum,
-        #                                QtWidgets.QSizePolicy.Expanding)
-        # hbox.addItem(hspace)
-
-        # vbox = QtWidgets.QVBoxLayout()
-        # self.crossbtn = QtWidgets.QCheckBox('Cross section')
-        # self.crossbtn.setToolTip("Display extra subplots with selectable cross",
-        #                          "sections or sums along axis.")
-        # self.customSectionBtn = QtWidgets.QCheckBox('custom cross section')
-        # # self.customSectionBtn.setToolTip("Display extra subplots with selectable cross sections "
-        #                          # "or sums along axis.")
-        # self.sumbtn = QtWidgets.QCheckBox('Sum')
-        # self.sumbtn.setToolTip("Display sums or cross sections.")
-
-        # self.savehmbtn = QtWidgets.QPushButton('Save Heatmap')
-        # self.savehmbtn.setToolTip("Save heatmap as a file (PDF)")
-        # self.savexbtn = QtWidgets.QPushButton('Save Vert')
-        # self.savexbtn.setToolTip("Save vertical cross section or sum as a file (PDF)")
-        # self.saveybtn = QtWidgets.QPushButton('Save Horz')
-        # self.savexbtn.setToolTip("Save horizontal cross section or sum as a file (PDF)")
-
-        # self.crossbtn.toggled.connect(self.toggle_cross)
-        # self.customSectionBtn.toggled.connect(self.toggle_customSection)
-        # self.sumbtn.toggled.connect(self.toggle_sum)
-
-        # self.savehmbtn.pressed.connect(self.save_heatmap)
-        # self.savexbtn.pressed.connect(self.save_subplot_x)
-        # self.saveybtn.pressed.connect(self.save_subplot_y)
-        # # Save custom cross section button
-        # self.customCrossSectionBtn = QtWidgets.QPushButton('save custom x-section')
-        # self.customCrossSectionBtn.pressed.connect(self.save_custom_x_section)
-        # vbox.addWidget(self.customCrossSectionBtn)
-
-        # self.toggle_cross()
-        # self.toggle_sum()
-
-        # vbox.addItem(vspace)
-        # vbox.addWidget(self.crossbtn)
-        # vbox.addWidget(self.customSectionBtn)
-        # vbox.addWidget(self.sumbtn)
-        # vbox.addWidget(self.savehmbtn)
-        # vbox.addWidget(self.savexbtn)
-        # vbox.addWidget(self.saveybtn)
-
-        # hbox.addLayout(vbox)
-
 
     @staticmethod
     def full_extent(ax, pad=0.0):
@@ -366,12 +311,13 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
             self.fig.canvas.draw_idle()
 
             # rewire events
-            # TODO: implement signals in a clean way
-            if self._cid:
-                self.fig.canvas.mpl_disconnect(self._cid)
-            self._cid = self.fig.canvas.mpl_connect('motion_notify_event', self._onMouseMove)
-            self._cid = self.fig.canvas.mpl_connect('button_press_event', self._onMouseDown)
-            self.fig.canvas.mpl_connect('key_press_event', self._onKeyPress)
+            for eventName, callback in [('motion_notify_event', self._onMouseMove),
+                                        ('button_press_event', self._onMouseDown),
+                                        ('key_press_event', self._onKeyPress)]:
+                print(eventName)
+                if self.eventIDs.get(eventName) not None:
+                    self.fig.canvas.mpl_disconnect(self.eventIDs[eventName])
+                self.eventIDs[eventName] = self.fig.canvas.mpl_connect(eventName, callback)
 
     def _onMouseMove(self, event):
         if event.inaxes == self.axes['main']:
