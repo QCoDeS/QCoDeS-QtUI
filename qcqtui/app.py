@@ -9,7 +9,7 @@ from matplotlib.figure import Figure
 
 # PyQt
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtWidgets import QMainWindow, QTextEdit, QAction, QApplication
+from PyQt5.QtWidgets import QMainWindow, QTextEdit, QAction, QApplication, QListWidget, QDockWidget
 from PyQt5.QtGui import QIcon, QPixmap, QColor, QPainter, QFont
 from PyQt5.QtCore import QSize, QRect, Qt
 
@@ -92,17 +92,29 @@ class ApplicationWindow(QMainWindow):
                 'The sum cross section tool creates a profile of the data between'+
                 'by summing all datapoints',
                 icon=getIconFromLetter('Σ','#5f8cba'))
+        # Widgets
+
+        # Data array dock
+        data_array_widget = QListWidget()
+        data_array_dock = QDockWidget("Data arrays", self)
+        data_array_dock.setWidget(data_array_widget)
+        data_array_dock.setFloating(False)
+
         # Main Widget
         self.main_widget = QtWidgets.QWidget(self)
+        self.setCentralWidget(self.main_widget)
+        self.addDockWidget(Qt.LeftDockWidgetArea, data_array_dock)
 
-        l = QtWidgets.QVBoxLayout(self.main_widget)
+        l = QtWidgets.QHBoxLayout(self.main_widget)
+
         cw = CrossSectionWidget(dataset, tools=tools)
         l.addWidget(cw)
 
         self.main_widget.setFocus()
-        self.setCentralWidget(self.main_widget)
 
         self.statusBar().showMessage("Starting", 2000)
+
+
 
     def onQuit(self):
         self.close()
