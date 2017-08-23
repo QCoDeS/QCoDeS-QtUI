@@ -15,7 +15,7 @@ import sys
 import os
 sys.path.append(os.path.join('../..',''))
 from qcqtui.widgets.xsection import CrossSectionWidget
-from qcqtui.app import ApplicationWindow
+from qcqtui.app import ApplicationWindow, getImageResourcePath
 
 # The DAC voltage source
 dac = DummyInstrument(name="dac", gates=['ch1', 'ch2'])
@@ -32,22 +32,24 @@ init(mainfolder='PlotTesting',
      station=station,
      annotate_image=False)
 
-plot, data = do2d(dac.ch1, 0, 10e-7, 50, 0.00,
-                  dac.ch2, 0, 10, 55, 0.00, dmm.voltage, do_plots=False)
+plot, data = do2d(dac.ch1, 0, 10e-7, 5, 0.00,
+                  dac.ch2, 0, 10, 6, 0.00, dmm.voltage, do_plots=False)
 dac.close()
 dmm.close()
-
-
+# from data_set import new_data
+# new_data(name="testdata")
 # generate test data
-y, x = np.meshgrid(np.linspace(-3, 3,55), np.linspace(-3,3, 50))
-z = (1 - x / 2. + x ** 5 + y ** 3) * np.exp(-x ** 2 - y ** 2)
+# y, x = np.meshgrid(np.linspace(-3, 3,55), np.linspace(-3,3, 50))
+# z = (1 - x / 2. + x ** 5 + y ** 3) * np.exp(-x ** 2 - y ** 2)
 
 # set the test data to the sample dataset
-data.dmm_voltage.ndarray = z
+# data.dmm_voltage.ndarray = z
 
 # create App
 qApp = QtWidgets.QApplication(sys.argv)
 qApp.setStyle('fusion')
+from PyQt5.QtGui import QIcon
+qApp.setWindowIcon(QIcon('/home/dominik/qdev/qcodes/qcodes-qtui/data/qcodes.png'))
 aw = ApplicationWindow(data.dmm_voltage)
 aw.show()
 # sys.exit(qApp.exec_())

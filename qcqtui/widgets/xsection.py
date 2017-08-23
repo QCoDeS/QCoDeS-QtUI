@@ -38,10 +38,10 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
         self.traces.append({
             'config': data,
         })
-
         # create plot
         self.fig = plt.figure()
         self.axes = dict()
+
         self.axes['main'] = self.fig.add_subplot(111)
         self.draw3DData(self.axes['main'])
 
@@ -64,21 +64,42 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
                 tools[id].triggered.connect(createHandler(id))
 
         # init members
-        self._lines = []
+
+        # widget relevant
+
+        # dictionary of the active event handlers
         self.eventIDs = dict()
+
+        # orthogonal cross sections
+
+        # plot object reference to the presisten lines drawn on the main axes
+        # representing the cuts where the cross sections are taken at
+        self.staticOrthoCursors = []
+        # position where the two cursors meet in index coordinates
         self.orhtoXSectionPos = (0,0)
+        # plot object reference to the plots in the two axis of the cross sections
+        self._lines = []
+        # Indicates wheter the cross section should be updated on cursor movement
         self.orthoXSectionlive = True
-        self._creatingCustomXSection = False
+
+        # custom cross section:
+
+        # reflecting state of having set one point and awaiting selection of the second
         self._drawingLine = False
-        # self._customLine = np.array([[ 0.0,0.0 ],[ 0.0,0.0 ]])
+        # the points of the custom cross section in data coordinates
         self._customLine = None
-        self._customLinePlots = []
+        # Custom cross section defining points in index coordinates
         self._customLinePos = np.array([[ 0,0 ],[ 0,0 ]])
+        # reference to the plot of the dot and the line as
+        # drawn on the main figure when creating a custom cross section
+        self._customLinePlots = []
+        # reflects state of a custom cross section has been drawn.
+        # -> remove and use coordinates
         self._customLineExists = False
+        # inter polated data representing the data points along the cross section
         self._customXPoints = None
         self._customYPoints = None
-        self._crossSections = []
-        self.staticOrthoCursors = []
+
 
     @staticmethod
     def full_extent(ax, pad=0.0):
@@ -164,7 +185,6 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
         self.axes = dict()
         self._customLinePlots = []
         self.staticOrthoCursors = []
-        self._crossSections = []
         self._lines = []
 
     def _addXSectionPlots(self):
@@ -267,7 +287,7 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
     def onToolChange(self, id):
         self.tool = id
         print(id)
-        if id == 'OrthoXSection' or id=='CustomXSection':
+        if id == 'OrthoXSection' or id=='CustomXSection' or id=='sumXSection':
             self.remove_plots()
             self.fig.clear()
 
@@ -276,11 +296,12 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
             self.axes['y'] = self.fig.add_subplot(2, 2, 2)
             self._addXSectionPlots()
 
-            self._cursor = Cursor(self.axes['main'], useblit=True, color='black')
             self.draw3DData(self.axes['main'])
             self.fig.tight_layout()
             self.fig.canvas.draw_idle()
 
+        if id == 'OrthoXSection' or id=='CustomXSection':
+            self._cursor = Cursor(self.axes['main'], useblit=True, color='black')
             # rewire events
             for eventName, callback in [('motion_notify_event', self._onMouseMove),
                                         ('button_press_event', self._onMouseDown),
@@ -291,6 +312,15 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
 
         if id == 'CustomXSection':
             self.axes['custom'] = self.fig.add_subplot(2, 2, 4)
+
+        if id == 'sumXSection':
+            # lines[0] is parallel x axes, so y values change for a given ypos
+            self.axes['x'].set_ylim(0, self.traces[0]['config']['z'].sum(axis=0).max() * 1.05)
+            self.axes['y'].set_xlim(0, self.traces[0]['config']['z'].sum(axis=1).max() * 1.05)
+            self._lines[0].set_ydata(self.traces[0]['config']['z'].sum(axis=0))
+            self._lines[1].set_xdata(self.traces[0]['config']['z'].sum(axis=1))
+            self.fig.canvas.draw_idle()
+
 
     def _onMouseMove(self, event):
         if event.inaxes == self.axes['main']:

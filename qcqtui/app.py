@@ -1,6 +1,5 @@
 import sys
 import os
-from enum import Enum
 
 # Matplotlib
 import matplotlib
@@ -11,55 +10,39 @@ from matplotlib.figure import Figure
 # PyQt
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtWidgets import QMainWindow, QTextEdit, QAction, QApplication
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QPixmap, QColor, QPainter, QFont
+from PyQt5.QtCore import QSize, QRect, Qt
 
 from .widgets.xsection import CrossSectionWidget
-progname = os.path.basename(sys.argv[0])
 
-# Tools = Enum('Tools', 'OrthoXSection CustomXSection')
-
-# def CrossSectionWidgetFromDataSet(dataset):
-#         self.expand_trace(args=[dataset], kwargs=data)
-    
-#         xlabel = self.get_label(data['x'])
-#         ylabel = self.get_label(data['y'])
-#         zlabel = self.get_label(data['z'])
-#         xaxis = data['x'].ndarray[0, :]
-#         yaxis = data['y'].ndarray
-
-
-# class CrossSectionWidget(FigureCanvas, BasePlot):
-
-#     def __init__(self, xaxis, yaxis, z, units, labels, parent=None, width=5, height=4, dpi=100):
-#         fig = Figure(figsize=(width, height), dpi=dpi)
-#         self.axes = fig.add_subplot(111)
-
-#         self.compute_initial_figure()
-
-#         FigureCanvas.__init__(self, fig)
-#         self.setParent(parent)
-
-#         FigureCanvas.setSizePolicy(self,
-#                                    QtWidgets.QSizePolicy.Expanding,
-#                                    QtWidgets.QSizePolicy.Expanding)
-#         FigureCanvas.updateGeometry(self)
-    
-
-#     def compute_initial_figure(self):
-#         pass
 def getImageResourcePath(resource):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), '../data/', resource)
+
+def getIconFromLetter(letter, color):
+    pixmap = QPixmap(256,256)
+    pixmap.fill(QColor('#00000000'))
+    painter = QPainter(pixmap)
+    painter.setPen(QColor(color));
+    font = QFont()
+    font.setPixelSize(256)
+    # painter.setFont(QFont("Decorative", 10));
+    painter.setFont(font);
+    painter.drawText(QRect(0,0, 256,256), Qt.AlignCenter, letter);
+    painter.end()
+    icon = QIcon(pixmap)
+    return icon
 
 
 class ApplicationWindow(QMainWindow):
     def __init__(self, dataset):
         QtWidgets.QMainWindow.__init__(self)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-
         # Main Window
         self.setWindowTitle("QCoDeS Qt Ui")
-
+        # self.setIcon(QIcon(getImageResourcePath('qcodes.png')))
+        self.setWindowIcon(QIcon(getImageResourcePath('qcodes.png')))
         # Actions
+
         quit_action = QAction(QIcon(getImageResourcePath('quit.png')), 'Quit' , self)
         quit_action.setShortcut('Ctrl+q')
         quit_action.triggered.connect(self.onQuit)
@@ -97,15 +80,18 @@ class ApplicationWindow(QMainWindow):
             toolbar.addAction(tools[id])
             tool_menu.addAction(tools[id])
 
-        imagepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../data/crosshair.png')
         addTool('OrthoXSection', 'Orthorgonal cross section', 'Ctrl+o',
-                'The orthorgonal cross section tool creates a profile of the data at a given point',
-                icon=QIcon(imagepath))
-        imagepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../data/customXSection.png')
+                'The orthorgonal cross section tool creates a profile of the data'+
+                'at a given point',
+                icon=QIcon(getImageResourcePath('crosshair.png')))
         addTool('CustomXSection', 'Custom cross section', 'Ctrl+u',
-                'The custom cross section tool creates a profile of the data between two given points',
-                icon=QIcon(imagepath))
-
+                'The custom cross section tool creates a profile of the data between'+
+                'two given points',
+                icon=QIcon(getImageResourcePath('customXSection.png')))
+        addTool('sumXSection', 'sum cross section', 'Ctrl+u',
+                'The sum cross section tool creates a profile of the data between'+
+                'by summing all datapoints',
+                icon=getIconFromLetter('Σ','#5f8cba'))
         # Main Widget
         self.main_widget = QtWidgets.QWidget(self)
 
@@ -127,11 +113,3 @@ class ApplicationWindow(QMainWindow):
     def onAbout(self):
         QtWidgets.QMessageBox.about(self, "About", "QCoDeS Qt Ui v0.1" )
 
-
-
-
-# qApp = QtWidgets.QApplication(sys.argv)
-# aw = ApplicationWindow()
-# aw.setWindowTitle("%s" % progname)
-# aw.show()
-# sys.exit(qApp.exec_())
