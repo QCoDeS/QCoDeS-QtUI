@@ -6,6 +6,7 @@ import matplotlib
 matplotlib.use("QT5Agg")
 from matplotlib.widgets import Cursor
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.ticker import FormatStrFormatter
 from matplotlib.widgets import RectangleSelector
 import matplotlib.pyplot as plt
@@ -22,28 +23,15 @@ from PyQt5 import QtWidgets, QtCore
 
 class CrossSectionWidget(FigureCanvas, BasePlot):
 
-    def __init__(self, dataset, tools=None):
-        # handle data
+    def __init__(self, dataArrayChanged, parent, tools=None):
+        #
+        self.dataArrayChanged = dataArrayChanged
+        self.parent = parent
+
         BasePlot.__init__(self)
 
-        data = {}
-        self.expand_trace(args=[dataset], kwargs=data)
-        self.traces = []
-
-        data['xlabel'] = self.get_label(data['x'])
-        data['ylabel'] = self.get_label(data['y'])
-        data['zlabel'] = self.get_label(data['z'])
-        data['xaxis'] = data['x'].ndarray[0, :]
-        data['yaxis'] = data['y'].ndarray
-        self.traces.append({
-            'config': data,
-        })
         # create plot
         self.fig = plt.figure()
-        self.axes = dict()
-
-        self.axes['main'] = self.fig.add_subplot(111)
-        self.draw3DData(self.axes['main'])
 
         FigureCanvas.__init__(self, self.fig)
         FigureCanvas.setSizePolicy(self,
@@ -54,6 +42,9 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
         self.setFocus()
         FigureCanvas.updateGeometry(self)
 
+        # connect events for data array update
+        dataArrayChanged.connect(self.onDataArrayChange)
+
         # connect events for tools
         if tools is not None:
         # this function does not do anything. It is however necessary to create a new scope for id
@@ -62,6 +53,35 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
                 return lambda: self.onToolChange(id)
             for id in tools.keys():
                 tools[id].triggered.connect(createHandler(id))
+
+        # add toolbar
+        self.mpl_toolbar = NavigationToolbar(self, parent)
+
+    def onDataArrayChange(self, dataArray):
+        print('on data array change in xsection widget')
+        self.showDataArray(dataArray)
+
+    def showDataArray(self, dataArray):
+        # handle data
+        data = {}
+        self.expand_trace(args=[dataArray], kwargs=data)
+        self.traces = []
+
+        data['xlabel'] = self.get_label(data['x'])
+        data['ylabel'] = self.get_label(data['y'])
+        data['zlabel'] = self.get_label(data['z'])
+        data['xaxis'] = data['x'].ndarray[0, :]
+        data['yaxis'] = data['y'].ndarray
+        self.traces.append({
+            'config': data,
+        })
+
+        # clear figure first
+        self.fig.clear()
+        self.axes = dict()
+        self.axes['main'] = self.fig.add_subplot(111)
+        self.draw3DData(self.axes['main'])
+        self.fig.canvas.draw_idle()
 
         # init members
 
