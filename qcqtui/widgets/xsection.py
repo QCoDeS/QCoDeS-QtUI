@@ -22,6 +22,7 @@ from PyQt5 import QtWidgets, QtCore
 
 
 class CrossSectionWidget(FigureCanvas, BasePlot):
+    rotateCrossSection = True
 
     def __init__(self, dataArrayChanged, parent, tools=None):
         #
@@ -227,27 +228,45 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
         # y means cut parrallel to y axes at a given x value, right plot
         # x is second index in traces
         ax = self.axes['y'] # y means cut parrallel to y axes, as 
-        ax.yaxis.get_major_formatter().set_powerlimits((0,0))
-        self._lines.append(ax.plot(self.traces[0]['config']['z'][:,self.orhtoXSectionPos[0]],
-                                   self.traces[0]['config']['yaxis'],
-                                   color='C0',
-                                   marker='.')[0])
-        self._update_label(ax, 'y', self.traces[0]['config']['ylabel'])
-        self._update_label(ax, 'x', self.traces[0]['config']['zlabel'])
-        self.traces[0]['config']['xpos'] = self.traces[0]['config']['yaxis'][self.orhtoXSectionPos[0]]
-        sum = self.traces[0]['config']['z'].sum(axis=0) * 1.05
-        ax.set_xlim(theMin, theMax)
+        if self.rotateCrossSection:
+            ax.xaxis.get_major_formatter().set_powerlimits((0,0))
+            self._lines.append(ax.plot(self.traces[0]['config']['yaxis'],
+                                       self.traces[0]['config']['z'][:,self.orhtoXSectionPos[0]],
+                                       color='C0',
+                                       marker='.')[0])
+            self._update_label(ax, 'x', self.traces[0]['config']['ylabel'])
+            self._update_label(ax, 'y', self.traces[0]['config']['zlabel'])
+            self.traces[0]['config']['xpos'] = self.traces[0]['config']['yaxis'][self.orhtoXSectionPos[0]]
+            sum = self.traces[0]['config']['z'].sum(axis=0) * 1.05
+            ax.set_ylim(theMin, theMax)
+        else:
+            ax.yaxis.get_major_formatter().set_powerlimits((0,0))
+            self._lines.append(ax.plot(self.traces[0]['config']['z'][:,self.orhtoXSectionPos[0]],
+                                       self.traces[0]['config']['yaxis'],
+                                       color='C0',
+                                       marker='.')[0])
+            self._update_label(ax, 'y', self.traces[0]['config']['ylabel'])
+            self._update_label(ax, 'x', self.traces[0]['config']['zlabel'])
+            self.traces[0]['config']['xpos'] = self.traces[0]['config']['yaxis'][self.orhtoXSectionPos[0]]
+            sum = self.traces[0]['config']['z'].sum(axis=0) * 1.05
+            ax.set_xlim(theMin, theMax)
 
         self._updateXSections()
 
 
     def _updateXSections(self):
+        # updating data points
         if not self._lines:
             self._addXSectionPlots()
         else:
             # lines[0] is parallel x axes, so y values change for a given ypos
             self._lines[0].set_ydata(self.traces[0]['config']['z'][self.orhtoXSectionPos[1], :])
-            self._lines[1].set_xdata(self.traces[0]['config']['z'][:, self.orhtoXSectionPos[0]])
+            if self.rotateCrossSection:
+                self._lines[1].set_ydata(self.traces[0]['config']['z'][:, self.orhtoXSectionPos[0]])
+            else:
+                self._lines[1].set_xdata(self.traces[0]['config']['z'][:, self.orhtoXSectionPos[0]])
+
+        # updateing title and label
         for i,d in enumerate(['x', 'y']):
             # self.axes[d].relim()
             # self.axes[d].autoscale_view()
