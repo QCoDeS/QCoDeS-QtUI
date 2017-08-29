@@ -355,9 +355,14 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
         if id == 'sumXSection':
             # lines[0] is parallel x axes, so y values change for a given ypos
             self.axes['x'].set_ylim(0, self.traces[0]['config']['z'].sum(axis=0).max() * 1.05)
-            self.axes['y'].set_xlim(0, self.traces[0]['config']['z'].sum(axis=1).max() * 1.05)
             self._lines[0].set_ydata(self.traces[0]['config']['z'].sum(axis=0))
-            self._lines[1].set_xdata(self.traces[0]['config']['z'].sum(axis=1))
+            if self.rotateCrossSection:
+                self.axes['y'].set_ylim(0, self.traces[0]['config']['z'].sum(axis=1).max() * 1.05)
+                self._lines[1].set_ydata(self.traces[0]['config']['z'].sum(axis=1))
+            else:
+                self.axes['y'].set_xlim(0, self.traces[0]['config']['z'].sum(axis=1).max() * 1.05)
+                self._lines[1].set_xdata(self.traces[0]['config']['z'].sum(axis=1))
+
             self.fig.canvas.draw_idle()
         if id == 'planeFit':
             x = self.traces[0]['config']['xaxis']
