@@ -359,6 +359,19 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
             self._lines[0].set_ydata(self.traces[0]['config']['z'].sum(axis=0))
             self._lines[1].set_xdata(self.traces[0]['config']['z'].sum(axis=1))
             self.fig.canvas.draw_idle()
+        if id == 'planeFit':
+            x = self.traces[0]['config']['xaxis']
+            y = self.traces[0]['config']['yaxis']
+            xv, yv = np.meshgrid(x,y)
+            z = self.traces[0]['config']['z']
+            A = np.column_stack((np.ones(xv.size), xv.flatten(), yv.flatten()))
+            zus,resid,rank,sigma = np.linalg.lstsq(A,z.flatten())
+            z = z-zus[0]-xv*zus[1]-yv*zus[2]
+            self.traces[0]['config']['z'] = z
+            self.draw3DData(self.axes['main'])
+            self.fig.tight_layout()
+            self.fig.canvas.draw_idle()
+
 
 
     def _onMouseMove(self, event):

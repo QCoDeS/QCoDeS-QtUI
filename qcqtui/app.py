@@ -107,6 +107,10 @@ class ApplicationWindow(QMainWindow):
                 'The sum cross section tool creates a profile of the data between'+
                 'by summing all datapoints',
                 icon=getIconFromLetter('Σ','#5f8cba'))
+        addTool('planeFit', 'Plane fit', 'Ctrl+f',
+                'Substract any linear background by fitting a plane to the data'+
+                'and substracting it',
+                icon=QIcon(getImageResourcePath('planeFit.png')))
         # Widgets
 
         # Data array dock

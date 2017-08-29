@@ -42,9 +42,13 @@ dmm.close()
 # generate test data
 y, x = np.meshgrid(np.linspace(-3, 3,55), np.linspace(-3,3, 50))
 z = (1 - x / 2. + x ** 5 + y ** 3) * np.exp(-x ** 2 - y ** 2)
-
+c = 1
+a = 0.2
+b = 0.3
+z2 = z + c + a*x +b*y
 # set the test data to the sample dataset
 data.dmm_voltage.ndarray = z
+data.dmm_voltage2.ndarray = z2
 
 # create App
 qApp = QtWidgets.QApplication(sys.argv)
