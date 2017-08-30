@@ -19,6 +19,7 @@ from PyQt5.QtCore import QSize, QRect, Qt, pyqtSignal
 
 from .widgets.xsection import CrossSectionWidget
 from .widgets.DataArrayListWidget import DataArrayListWidget
+from .widgets.FilterListWidget import FilterListWidget 
 
 def getImageResourcePath(resource):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), '../data/', resource)
@@ -121,9 +122,6 @@ class ApplicationWindow(QMainWindow):
 
         # Main Widget
         self.main_widget = QtWidgets.QWidget(self)
-        self.setCentralWidget(self.main_widget)
-        self.addDockWidget(Qt.LeftDockWidgetArea, data_array_dock)
-
         l = QtWidgets.QVBoxLayout(self.main_widget)
         toolbarholder = QWidget()
         toolbarholder.setFixedSize(400,40)
@@ -140,9 +138,18 @@ class ApplicationWindow(QMainWindow):
 
         self.main_widget.setFocus()
 
+        self.main_dock = QDockWidget("Main view", self)
+        self.main_dock.setWidget(self.main_widget)
+        self.setCentralWidget(self.main_dock)
+        self.addDockWidget(Qt.LeftDockWidgetArea, data_array_dock)
         self.statusBar().showMessage("Starting", 2000)
         self.data_array_widget.loadDataSet(dataset)
 
+        # filter dock
+        self.filter_widget = FilterListWidget()
+        filter_dock = QDockWidget("Filters", self)
+        filter_dock.setWidget(self.filter_widget)
+        self.addDockWidget(Qt.BottomDockWidgetArea, filter_dock)
         # # Cross Section Widget
         # # find first meassured dataset
         # for data_array in dataset.arrays.values():
