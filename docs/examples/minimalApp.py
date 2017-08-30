@@ -19,7 +19,7 @@ from qcqtui.app import ApplicationWindow, getImageResourcePath
 # The DAC voltage source
 dac = DummyInstrument(name="dac", gates=['ch1', 'ch2'])
 # The DMM reader
-dmm = DummyInstrument(name="dmm", gates=['voltage', 'current', 'voltage2'])  
+dmm = DummyInstrument(name="dmm", gates=['voltage', 'current', 'voltage2'])
 
 import random
 dmm.voltage.get =  lambda: random.randint(0, 100)

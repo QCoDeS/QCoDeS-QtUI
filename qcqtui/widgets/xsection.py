@@ -21,6 +21,18 @@ import numpy as np
 # PyQt
 from PyQt5 import QtWidgets, QtCore
 
+# class DataRepresentation2D:
+#     x
+#     y
+#     z
+#     xlabel = ''
+#     ylabel = ''
+#     zlabel = ''
+#     xUnit = ''
+#     yUnit = ''
+#     zUnit = '' 
+
+
 
 class CrossSectionWidget(FigureCanvas, BasePlot):
 
@@ -36,9 +48,9 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
         self.fig = Figure()
 
         FigureCanvas.__init__(self, self.fig)
-        FigureCanvas.setSizePolicy(self,
-                                   QtWidgets.QSizePolicy.Expanding,
-                                   QtWidgets.QSizePolicy.Expanding)
+        # FigureCanvas.setSizePolicy(self,
+        #                            QtWidgets.QSizePolicy.Expanding,
+        #                            QtWidgets.QSizePolicy.Expanding)
         # for receiving key events this focus has to be set
         self.setFocusPolicy( QtCore.Qt.ClickFocus )
         self.setFocus()
