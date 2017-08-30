@@ -23,11 +23,11 @@ from PyQt5 import QtWidgets, QtCore
 
 
 class CrossSectionWidget(FigureCanvas, BasePlot):
-    rotateCrossSection = True
 
-    def __init__(self, dataArrayChanged, parent, tools=None):
+    def __init__(self, dataArrayChanged, parent, tools=None, rotateCrossSection = False):
         #
         self.dataArrayChanged = dataArrayChanged
+        self.rotateCrossSection = rotateCrossSection
         self.parent = parent
 
         BasePlot.__init__(self)
@@ -137,52 +137,25 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
         bbox = Bbox.union([item.get_window_extent() for item in items])
         return bbox.expanded(1.0 + pad, 1.0 + pad)
 
-    def save_custom_x_section(self): 
-        fig2 = plt.figure()
-        ax1 = fig2.add_subplot(121)
-        ax2 = fig2.add_subplot(122)
-        self.draw3DData(ax1)
-        self.drawCustomXSectionOn3DData(ax1)
-        self.drawCustomXSection(ax2)
-        fig2.show()
+
+    def save_subplot_title_infix(self, axes, name_infix, saveformat='pdf'):
+        if axes:
+            title = self.get_default_title()
+            title += " " + name_infix + " " + axes.get_title().replace(',','.')
+            self.save_subplot(axes, savename=title, saveformat=saveformat)
+        else:
+            print("not saving axes with infix \"{}\" because passed axes were invalid".format(name_infix))
 
     def save_subplot(self, axes, savename, saveformat='pdf'):
         extent = self.full_extent(axes).transformed(
             self.fig.dpi_scale_trans.inverted())
+        print(savename)
         full_title = "{}.{}".format(savename, saveformat)
         self.fig.savefig(full_title, bbox_inches=extent)
 
-    def save_subplot_x(self):
-        title = self.get_default_title()
-        label, unit = self._get_label_and_unit(self.traces[0]['config']['xlabel'])
-        if self.sumbtn.isChecked():
-            title += " sum over {}".format(label)
-        else:
-            title += " cross section {} = {} {}".format(label,
-                                                        self.traces[0]['config']['xpos'],
-                                                        unit)
-        self.save_subplot(axnumber=(0, 1), savename=title)
-
-    def save_subplot_y(self):
-        title = self.get_default_title()
-        label, unit = self._get_label_and_unit(self.traces[0]['config']['ylabel'])
-        if self.sumbtn.isChecked():
-            title += " sum over {}".format(label)
-        else:
-            title += " cross section {} = {} {}".format(label,
-                                                        self.traces[0]['config']['xpos'],
-                                                        unit)
-        self.save_subplot(axnumber=(1, 0), savename=title)
-
-    def save_heatmap(self):
-        title = self.get_default_title() + " heatmap"
-        self.save_subplot(axnumber=(0, 0), savename=title)
 
     def _update_label(self, ax, axletter, label, extra=None):
-        if type(label) == tuple and len(label) == 2:
-            label, unit = label
-        else:
-            unit = ""
+        label, unit = self._get_label_and_unit(label)
         axsetter = getattr(ax, "set_{}label".format(axletter))
         if extra:
             axsetter(extra + "{} ({})".format(label, unit))
@@ -290,7 +263,20 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
     def drawCustomXSection(self, ax):
         ax.set_xlim((min(self._customXPoints),max(self._customXPoints)))
         ax.plot(self._customXPoints,self._customYPoints, color='C0')
-        ax.set_title('Multiparameter Crossection', fontsize='small')
+        title = "Cross section({:.2n} {}, {:.2n} {}) to ({:.2n} {}, {:.2n})"
+        title = title.format(self._customLine[0,0], "V",self._customLine[0,1], "V",
+                             self._customLine[1,0], "V",self._customLine[1,1], "V")
+        ax.set_title(title, fontsize='small')
+        self._update_label(ax, 'y', self.traces[0]['config']['zlabel'])
+        # add label for unit if it makes sense
+        xlabel, xunit = self._get_label_and_unit(self.traces[0]['config']['xlabel'])
+        ylabel, yunit = self._get_label_and_unit(self.traces[0]['config']['ylabel'])
+        if xunit == yunit:
+            unit = xunit
+        else:
+            unit = "mixed units"
+        label = xlabel + " and " + ylabel
+        self._update_label(ax, 'x', (label, unit))
 
     def drawCustomXSectionOn3DData(self, ax):
         return ax.plot(self._customLine[:,0],self._customLine[:,1], 'r+-')[0]
@@ -378,7 +364,15 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
             self.fig.tight_layout()
             self.fig.canvas.draw_idle()
 
-
+        if id == 'SavePlotsPDF' or id == 'SavePlotsPNG':
+           if id=='SavePlotsPNG':
+               saveformat = 'png'
+           elif id == 'SavePlotsPDF':
+               saveformat = 'pdf'
+           self.save_subplot_title_infix(self.axes.get('x'), "Crossection for", saveformat=saveformat)
+           self.save_subplot_title_infix(self.axes.get('y'), "Crossection for", saveformat=saveformat)
+           self.save_subplot_title_infix(self.axes.get('main'), "2DPlot", saveformat=saveformat)
+           self.save_subplot_title_infix(self.axes.get('custom'), "custom cross section", saveformat=saveformat)
 
     def _onMouseMove(self, event):
         if event.inaxes == self.axes['main']:

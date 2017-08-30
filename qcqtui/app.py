@@ -42,7 +42,9 @@ class ApplicationWindow(QMainWindow):
     # http://pyqt.sourceforge.net/Docs/PyQt5/signals_slots.html
     dataArrayChanged = pyqtSignal(DataArray, name='OnDataSetChanged')
 
-    def __init__(self, dataset):
+    def __init__(self, dataset, rotateCrossSection=False):
+        # TODO: make a better solution for rotateCrossSection, so
+        # it does not have to be passed on to the widget
         QtWidgets.QMainWindow.__init__(self)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         # Main Window
@@ -111,6 +113,14 @@ class ApplicationWindow(QMainWindow):
                 'Substract any linear background by fitting a plane to the data'+
                 'and substracting it',
                 icon=QIcon(getImageResourcePath('planeFit.png')))
+        addTool('SavePlotsPDF', 'Save all plots as pdf', 'Ctrl+s',
+                ''+
+                '',
+                icon=QIcon(getImageResourcePath('savePdf.png')))
+        addTool('SavePlotsPNG', 'Save all plots as png', 'Ctrl+s',
+                ''+
+                '',
+                icon=QIcon(getImageResourcePath('savePng.png')))
         # Widgets
 
         # Data array dock
@@ -130,7 +140,8 @@ class ApplicationWindow(QMainWindow):
         # toolbar2.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
         #                        QtWidgets.QSizePolicy.Expanding)
         toolbar2.setFixedWidth(500)
-        cw = CrossSectionWidget(self.dataArrayChanged, toolbar2, tools=tools)
+        cw = CrossSectionWidget(self.dataArrayChanged, toolbar2, tools=tools,
+                                rotateCrossSection = rotateCrossSection)
         l.addWidget(cw)
 
         self.main_widget.setFocus()
@@ -159,8 +170,8 @@ class ApplicationWindow(QMainWindow):
         self.close()
 
     def closeEvent(self, ce):
-        self.fileQuit()
+        self.onQuit()
 
     def onAbout(self):
-        QtWidgets.QMessageBox.about(self, "About", "QCoDeS Qt Ui v0.1" )
+        QtWidgets.QMessageBox.about(self, "About", "QCoDeS Qt Ui v0.2" )
 

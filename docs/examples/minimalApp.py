@@ -60,7 +60,7 @@ else:
 qApp.setStyle('fusion')
 from PyQt5.QtGui import QIcon
 qApp.setWindowIcon(QIcon('/home/domnik/qdev/qcodes/qcodes-qtui/data/qcodes.png'))
-aw = ApplicationWindow(data)
+aw = ApplicationWindow(data, rotateCrossSection=True)
 aw.show()
 # sys.exit(qApp.exec_())
-qApp.exec_()
+# qApp.exec_()
