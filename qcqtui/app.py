@@ -13,7 +13,7 @@ from qcodes.data.data_array import DataArray
 
 # PyQt
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtWidgets import QMainWindow, QTextEdit, QAction, QApplication, QListWidget, QDockWidget, QFileDialog
+from PyQt5.QtWidgets import QMainWindow, QTextEdit, QAction, QApplication, QListWidget, QDockWidget, QFileDialog, QWidget
 from PyQt5.QtGui import QIcon, QPixmap, QColor, QPainter, QFont
 from PyQt5.QtCore import QSize, QRect, Qt, pyqtSignal
 
@@ -124,13 +124,18 @@ class ApplicationWindow(QMainWindow):
         self.setCentralWidget(self.main_widget)
         self.addDockWidget(Qt.LeftDockWidgetArea, data_array_dock)
 
-        l = QtWidgets.QHBoxLayout(self.main_widget)
+        l = QtWidgets.QVBoxLayout(self.main_widget)
+        toolbarholder = QWidget()
+        toolbarholder.setFixedSize(400,40)
+        # toolbarholder.setBaseSize(400,40)
+        toolbarholder.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
+                                    QtWidgets.QSizePolicy.Expanding)
+        l.addWidget(toolbarholder)
 
 
         # toolbar2.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
         #                        QtWidgets.QSizePolicy.Expanding)
-        toolbar2.setFixedWidth(500)
-        cw = CrossSectionWidget(self.dataArrayChanged, toolbar2, tools=tools)
+        cw = CrossSectionWidget(self.dataArrayChanged, toolbarholder, tools=tools)
         l.addWidget(cw)
 
         self.main_widget.setFocus()
@@ -148,8 +153,8 @@ class ApplicationWindow(QMainWindow):
     # events
     def onOpenFile(self):
         options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
-        fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*);;Python Files (*.py)", options=options)
+        # options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*);;Dataset Files (*.dat)", options=options)
         if fileName:
             dataset = load_data(location=fileName)
             self.data_array_widget.loadDataSet(dataset)
