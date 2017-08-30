@@ -11,6 +11,7 @@ from matplotlib.ticker import FormatStrFormatter
 from matplotlib.widgets import RectangleSelector
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+from matplotlib.figure import Figure
 import mplcursors
 
 # scipy and numpy
@@ -32,7 +33,7 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
         BasePlot.__init__(self)
 
         # create plot
-        self.fig = plt.figure()
+        self.fig = Figure()
 
         FigureCanvas.__init__(self, self.fig)
         FigureCanvas.setSizePolicy(self,

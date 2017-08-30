@@ -138,7 +138,7 @@ class ApplicationWindow(QMainWindow):
         self.statusBar().showMessage("Starting", 2000)
         self.data_array_widget.loadDataSet(dataset)
 
-        # # Cross Section Widget
+        # Cross Section Widget
         # # find first meassured dataset
         # for data_array in dataset.arrays.values():
         #     if not data_array.is_setpoint:

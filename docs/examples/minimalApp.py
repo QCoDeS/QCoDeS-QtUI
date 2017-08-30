@@ -16,7 +16,6 @@ import os
 sys.path.append(os.path.join('../..',''))
 from qcqtui.widgets.xsection import CrossSectionWidget
 from qcqtui.app import ApplicationWindow, getImageResourcePath
-
 # The DAC voltage source
 dac = DummyInstrument(name="dac", gates=['ch1', 'ch2'])
 # The DMM reader
@@ -31,7 +30,8 @@ station = qc.Station(dac, dmm)
 init(mainfolder='PlotTesting',
      sample_name='plottestsample',
      station=station,
-     annotate_image=False)
+     annotate_image=False,
+     display_pdf=False)
 
 plot, data = do2d(dac.ch1, 0, 10e-7, 50, 0.00,
                   dac.ch2, 0, 10, 55, 0.00, dmm.voltage, dmm.voltage2, do_plots=False)
@@ -51,10 +51,16 @@ data.dmm_voltage.ndarray = z
 data.dmm_voltage2.ndarray = z2
 
 # create App
-qApp = QtWidgets.QApplication(sys.argv)
+from PyQt5 import QtWidgets
+if not QtWidgets.QApplication.instance():
+   qApp = QtWidgets.QApplication(sys.argv)
+else:
+   qApp = QtWidgets.QApplication.instance()
+
 qApp.setStyle('fusion')
 from PyQt5.QtGui import QIcon
 qApp.setWindowIcon(QIcon('/home/domnik/qdev/qcodes/qcodes-qtui/data/qcodes.png'))
 aw = ApplicationWindow(data)
 aw.show()
 # sys.exit(qApp.exec_())
+qApp.exec_()
