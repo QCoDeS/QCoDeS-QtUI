@@ -367,7 +367,8 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
 
             self.fig.canvas.draw_idle()
         if id == 'selectionTool':
-            self.isSelecting = True
+            # if self.RS is not None:
+            #     self.RS.delete()
             self.RS = RectangleSelector(self.axes['main'],
                                         self._onRectangleSelected,
                                         drawtype='box', useblit=False,
