@@ -336,6 +336,11 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
                     self.fig.canvas.mpl_disconnect(self.eventIDs[eventName])
                 self.eventIDs[eventName] = self.fig.canvas.mpl_connect(eventName, callback)
 
+        if id == 'OrthoXSection':
+            self.removeStaticCursor()
+            self.orthoXSectionlive = True
+
+
         if id == 'CustomXSection':
             self.axes['custom'] = self.fig.add_subplot(2, 2, 4)
 

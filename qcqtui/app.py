@@ -71,9 +71,13 @@ class ApplicationWindow(QMainWindow):
         self.file_menu.addAction(file_open_action)
         self.file_menu.addSeparator()
         self.file_menu.addAction(quit_action)
-        # Tools
+
+        # ToolbarMenus
         tool_menu = QtWidgets.QMenu('&Tools', self)
         self.menuBar().addMenu(tool_menu)
+
+        view_menu = QtWidgets.QMenu('&View', self)
+        self.menuBar().addMenu(view_menu)
 
         # help
         self.help_menu = QtWidgets.QMenu('&Help', self)
@@ -82,7 +86,8 @@ class ApplicationWindow(QMainWindow):
         self.help_menu.addAction(about_action)
 
         # toolbars
-        toolbar = self.addToolBar('Tools')
+        tools_tool_bar = self.addToolBar('Tools')
+        views_tool_bar = self.addToolBar('Views')
         toolbar2 = self.addToolBar('mplTools')
 
         # Tools
@@ -94,18 +99,28 @@ class ApplicationWindow(QMainWindow):
                 tools[id] =  QAction(name, self)
             tools[id].setShortcut(shortcut)
             tools[id].setStatusTip(tip)
-            toolbar.addAction(tools[id])
+            tools_tool_bar.addAction(tools[id])
             tool_menu.addAction(tools[id])
 
-        addTool('OrthoXSection', 'Orthorgonal cross section', 'Ctrl+o',
+        def addView(id,  name, shortcut, tip, **kwargs):
+            if 'icon' in kwargs.keys():
+                tools[id] =  QAction(kwargs['icon'], name, self)
+            else:
+                tools[id] =  QAction(name, self)
+            tools[id].setShortcut(shortcut)
+            tools[id].setStatusTip(tip)
+            views_tool_bar.addAction(tools[id])
+            view_menu.addAction(tools[id])
+
+        addView('OrthoXSection', 'Orthorgonal cross section', 'Ctrl+r',
                 'The orthorgonal cross section tool creates a profile of the data'+
                 'at a given point',
                 icon=QIcon(getImageResourcePath('crosshair.png')))
-        addTool('CustomXSection', 'Custom cross section', 'Ctrl+u',
+        addView('CustomXSection', 'Custom cross section', 'Ctrl+u',
                 'The custom cross section tool creates a profile of the data between'+
                 'two given points',
                 icon=QIcon(getImageResourcePath('customXSection.png')))
-        addTool('sumXSection', 'sum cross section', 'Ctrl+u',
+        addView('sumXSection', 'sum cross section', 'Ctrl+i',
                 'The sum cross section tool creates a profile of the data between'+
                 'by summing all datapoints',
                 icon=getIconFromLetter('Σ','#5f8cba'))
@@ -117,7 +132,7 @@ class ApplicationWindow(QMainWindow):
                 ''+
                 '',
                 icon=QIcon(getImageResourcePath('savePdf.png')))
-        addTool('SavePlotsPNG', 'Save all plots as png', 'Ctrl+s',
+        addTool('SavePlotsPNG', 'Save all plots as png', '',
                 ''+
                 '',
                 icon=QIcon(getImageResourcePath('savePng.png')))
