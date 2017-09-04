@@ -131,6 +131,9 @@ class ApplicationWindow(QMainWindow):
         addTool('selectionTool', 'Select', 'Ctrl+e',
                 'Select region to appy modifications',
                 icon=QIcon(getImageResourcePath('selectionTool.png')))
+        addTool('restore', 'restore', 'Ctrl+r',
+                'restore data',
+                icon=QIcon(getImageResourcePath('restore.png')))
         addTool('SavePlotsPDF', 'Save all plots as pdf', 'Ctrl+s',
                 ''+
                 '',
@@ -153,18 +156,15 @@ class ApplicationWindow(QMainWindow):
         self.addDockWidget(Qt.LeftDockWidgetArea, data_array_dock)
 
         l = QtWidgets.QVBoxLayout(self.main_widget)
-        toolbarholder = QWidget()
-        toolbarholder.setFixedSize(400,40)
-        # toolbarholder.setBaseSize(400,40)
-        toolbarholder.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
+        qt_toolbar = QWidget()
+        qt_toolbar.setFixedSize(450,40)
+        # qt_toolbar.setBaseSize(400,40)
+        qt_toolbar.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
                                     QtWidgets.QSizePolicy.Expanding)
-        l.addWidget(toolbarholder)
+        l.addWidget(qt_toolbar)
 
 
-        # toolbar2.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
-        #                        QtWidgets.QSizePolicy.Expanding)
-        toolbar2.setFixedWidth(500)
-        cw = CrossSectionWidget(self.dataArrayChanged, toolbarholder, tools=tools,
+        cw = CrossSectionWidget(self.dataArrayChanged, qt_toolbar, tools=tools,
                                 rotateCrossSection = rotateCrossSection)
         l.addWidget(cw)
 

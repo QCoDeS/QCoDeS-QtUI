@@ -21,18 +21,6 @@ import numpy as np
 # PyQt
 from PyQt5 import QtWidgets, QtCore
 
-# class DataRepresentation2D:
-#     x
-#     y
-#     z
-#     xlabel = ''
-#     ylabel = ''
-#     zlabel = ''
-#     xUnit = ''
-#     yUnit = ''
-#     zUnit = '' 
-
-
 
 class CrossSectionWidget(FigureCanvas, BasePlot):
 
@@ -86,9 +74,9 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
         data['zlabel'] = self.get_label(data['z'])
         data['xaxis'] = data['x'].ndarray[0, :]
         data['yaxis'] = data['y'].ndarray
+        data['zoriginal'] = np.array(data['z'])
         self.traces.append({
             'config': data,
-            'original': data,
         })
 
         # clear figure first
@@ -362,7 +350,6 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
             self.removeStaticCursor()
             self.orthoXSectionlive = True
 
-
         if id == 'CustomXSection':
             self.axes['custom'] = self.fig.add_subplot(2, 2, 4)
 
@@ -388,6 +375,14 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
                                         minspanx=5, minspany=5,
                                         spancoords='pixels',
                                         interactive=True)
+        if id == 'restore':
+            cpy = self.traces[0]['config']['zoriginal']
+            self.traces[0]['config']['z'] = np.array(cpy)
+            self.draw3DData(self.axes['main'])
+            # self.axes['main'].set_xlim(x.min(), x.max())
+            # self.axes['main'].set_ylim(y.min(), y.max())
+            self.fig.tight_layout()
+            self.fig.canvas.draw_idle()
 
         if id == 'planeFit':
             def getSection(x, y, z, section):
@@ -513,7 +508,7 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
         x1, y1 = self._data2index([x1, y1])
         x2, y2 = self._data2index([x2, y2])
         self._rectangleSelection=np.array([[x1, y1], [x2, y2]])
-        print("(%3.2f, %3.2f) --> (%3.2f, %3.2f)" % (x1, y1, x2, y2))
+        # print("(%3.2f, %3.2f) --> (%3.2f, %3.2f)" % (x1, y1, x2, y2))
 
     def _interpolate(self ):
         f = interp2d(self.traces[0]['config']['xaxis'],
