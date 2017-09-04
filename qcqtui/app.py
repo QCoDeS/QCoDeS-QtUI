@@ -120,7 +120,7 @@ class ApplicationWindow(QMainWindow):
                 'The custom cross section tool creates a profile of the data between'+
                 'two given points',
                 icon=QIcon(getImageResourcePath('customXSection.png')))
-        addView('sumXSection', 'sum cross section', 'Ctrl+i',
+        addView('sumXSection', 'sum cross section', 'Ctrl+u',
                 'The sum cross section tool creates a profile of the data between'+
                 'by summing all datapoints',
                 icon=getIconFromLetter('Σ','#5f8cba'))
@@ -128,6 +128,9 @@ class ApplicationWindow(QMainWindow):
                 'Substract any linear background by fitting a plane to the data'+
                 'and substracting it',
                 icon=QIcon(getImageResourcePath('planeFit.png')))
+        addTool('selectionTool', 'Select', 'Ctrl+e',
+                'Select region to appy modifications',
+                icon=QIcon(getImageResourcePath('selectionTool.png')))
         addTool('SavePlotsPDF', 'Save all plots as pdf', 'Ctrl+s',
                 ''+
                 '',

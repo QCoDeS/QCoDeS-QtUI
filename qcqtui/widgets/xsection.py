@@ -4,7 +4,7 @@ from qcodes.plots.base import BasePlot
 # matplotlib
 import matplotlib
 matplotlib.use("QT5Agg")
-from matplotlib.widgets import Cursor
+from matplotlib.widgets import Cursor, RectangleSelector
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.ticker import FormatStrFormatter
@@ -76,6 +76,7 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
         data['yaxis'] = data['y'].ndarray
         self.traces.append({
             'config': data,
+            'original': data,
         })
 
         # clear figure first
@@ -121,6 +122,10 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
         # inter polated data representing the data points along the cross section
         self._customXPoints = None
         self._customYPoints = None
+
+        # rectangle selection
+        self._rectangleSelection=np.array([[0, 0], [0, 0]])
+
 
 
     @staticmethod
@@ -292,6 +297,11 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
         y = self.traces[0]['config']['yaxis'][index[1]]
         return (x,y)
 
+    def _data2index(self, data_coordinate):
+        ix = np.abs(self.traces[0]['config']['xaxis']-data_coordinate[0]).argmin()
+        iy = np.abs(self.traces[0]['config']['yaxis']-data_coordinate[1]).argmin()
+        return ix, iy
+
     # events
     def removeStaticCursor(self):
         if self.staticOrthoCursors:
@@ -327,7 +337,7 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
             self.fig.canvas.draw_idle()
 
         if id == 'OrthoXSection' or id=='CustomXSection':
-            self._cursor = Cursor(self.axes['main'], useblit=True, color='black')
+            self._cursor = Cursor(self.axes['main'], useblit=False, color='black')
             # rewire events
             for eventName, callback in [('motion_notify_event', self._onMouseMove),
                                         ('button_press_event', self._onMouseDown),
@@ -356,16 +366,41 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
                 self._lines[1].set_xdata(self.traces[0]['config']['z'].sum(axis=1))
 
             self.fig.canvas.draw_idle()
+        if id == 'selectionTool':
+            self.isSelecting = True
+            self.RS = RectangleSelector(self.axes['main'],
+                                        self._onRectangleSelected,
+                                        drawtype='box', useblit=False,
+                                        button=[1, 3],  # don't use middle button
+                                        minspanx=5, minspany=5,
+                                        spancoords='pixels',
+                                        interactive=True)
+
         if id == 'planeFit':
+            def getSection(x, y, z, section):
+               x = x[section[0,0]:section[1,0]]
+               y = y[section[0,1]:section[1,1]]
+               z = z[section[0,1]:section[1,1],section[0,0]:section[1,0]]
+               # print("xmax: {}, xmin: {}, ymax {}, ymin {}".format(x.max(), x.min(), y.max(), y.min()))
+               return x, y, z
             x = self.traces[0]['config']['xaxis']
             y = self.traces[0]['config']['yaxis']
-            xv, yv = np.meshgrid(x,y)
             z = self.traces[0]['config']['z']
-            A = np.column_stack((np.ones(xv.size), xv.flatten(), yv.flatten()))
-            zus,resid,rank,sigma = np.linalg.lstsq(A,z.flatten())
+            nx, ny, nz = getSection(x,y,z, self._rectangleSelection)
+
+            # actual algorithm
+            nxv, nyv = np.meshgrid(nx,ny)
+            A = np.column_stack((np.ones(nxv.size), nxv.flatten(), nyv.flatten()))
+            zus,resid,rank,sigma = np.linalg.lstsq(A,nz.flatten())
+
+            xv, yv = np.meshgrid(x,y)
             z = z-zus[0]-xv*zus[1]-yv*zus[2]
+
+            # setting data and update
             self.traces[0]['config']['z'] = z
             self.draw3DData(self.axes['main'])
+            self.axes['main'].set_xlim(x.min(), x.max())
+            self.axes['main'].set_ylim(y.min(), y.max())
             self.fig.tight_layout()
             self.fig.canvas.draw_idle()
 
@@ -458,7 +493,15 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
             self._updateStaticCursor()
             self._updateXSections()
 
-    # calculation
+    def _onRectangleSelected(self,eclick, erelease):
+        x1, y1 = eclick.xdata, eclick.ydata
+        x2, y2 = erelease.xdata, erelease.ydata
+        # convert click data from coordinate domain to index domain
+        x1, y1 = self._data2index([x1, y1])
+        x2, y2 = self._data2index([x2, y2])
+        self._rectangleSelection=np.array([[x1, y1], [x2, y2]])
+        print("(%3.2f, %3.2f) --> (%3.2f, %3.2f)" % (x1, y1, x2, y2))
+
     def _interpolate(self ):
         f = interp2d(self.traces[0]['config']['xaxis'],
                      self.traces[0]['config']['yaxis'],
