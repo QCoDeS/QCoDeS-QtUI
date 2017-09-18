@@ -61,6 +61,7 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
 
     def onDataArrayChange(self, dataArray):
         print('on data array change in xsection widget')
+        self.onToolChange('None') # this is kind of a hacky quick fix
         self.showDataArray(dataArray)
 
     def showDataArray(self, dataArray):
@@ -323,6 +324,10 @@ class CrossSectionWidget(FigureCanvas, BasePlot):
     def onToolChange(self, id):
         self.tool = id
         print(id)
+        if id == 'none':
+            self.remove_plots()
+            self.fig.clear()
+
         if id == 'OrthoXSection' or id=='CustomXSection' or id=='sumXSection':
             self.remove_plots()
             self.fig.clear()

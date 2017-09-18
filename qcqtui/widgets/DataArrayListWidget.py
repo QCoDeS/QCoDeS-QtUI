@@ -14,8 +14,8 @@ class DataArrayListWidget(QListWidget):
         self.dataArrays = dict()
 
     def onSelectionChange(self, current, previous):
-        print('sel')
         # TODO: add some fail check to this
+        print('current = {}'.format(current.data()))
         self.dataArrayChanged.emit(self.dataArrays[current.data()])
 
 

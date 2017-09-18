@@ -25,6 +25,7 @@ def getImageResourcePath(resource):
 
 def getIconFromLetter(letter, color):
     pixmap = QPixmap(256,256)
+    # transparent background
     pixmap.fill(QColor('#00000000'))
     painter = QPainter(pixmap)
     painter.setPen(QColor(color));
@@ -51,12 +52,15 @@ class ApplicationWindow(QMainWindow):
         self.setWindowTitle("QCoDeS Qt Ui")
         # self.setIcon(QIcon(getImageResourcePath('qcodes.png')))
         self.setWindowIcon(QIcon(getImageResourcePath('qcodes.png')))
-        # Actions
 
+        ## Actions
+
+        # quit
         quit_action = QAction(QIcon(getImageResourcePath('quit.png')), 'Quit' , self)
         quit_action.setShortcut('Ctrl+q')
         quit_action.triggered.connect(self.onQuit)
 
+        # file
         file_open_action = QAction(QIcon(getImageResourcePath('fileopen.png')), 'Open' , self)
         file_open_action.setShortcut('Ctrl+o')
         file_open_action.triggered.connect(self.onOpenFile)
@@ -64,7 +68,7 @@ class ApplicationWindow(QMainWindow):
         about_action = QAction(QIcon(getImageResourcePath('about.png')), 'About' , self)
         about_action.triggered.connect(self.onAbout)
 
-        # Menus
+        ## Menus
         # File
         self.file_menu = QtWidgets.QMenu('&File', self)
         self.menuBar().addMenu(self.file_menu)
@@ -72,7 +76,7 @@ class ApplicationWindow(QMainWindow):
         self.file_menu.addSeparator()
         self.file_menu.addAction(quit_action)
 
-        # ToolbarMenus
+        # Tool
         tool_menu = QtWidgets.QMenu('&Tools', self)
         self.menuBar().addMenu(tool_menu)
 
@@ -94,7 +98,7 @@ class ApplicationWindow(QMainWindow):
         tools = dict()
         def addTool(id,  name, shortcut, tip, **kwargs):
             if 'icon' in kwargs.keys():
-                tools[id] =  QAction(kwargs['icon'], name, self)
+                tools[id] =  QAction(kwargs['icon'], name, self,checkable=True)
             else:
                 tools[id] =  QAction(name, self)
             tools[id].setShortcut(shortcut)
@@ -164,8 +168,9 @@ class ApplicationWindow(QMainWindow):
         l.addWidget(qt_toolbar)
 
 
-        cw = CrossSectionWidget(self.dataArrayChanged, qt_toolbar, tools=tools,
-                                rotateCrossSection = rotateCrossSection)
+        self.cross_section_widget = CrossSectionWidget(self.dataArrayChanged,
+                                                       qt_toolbar, tools=tools,
+                                                       rotateCrossSection = rotateCrossSection)
         l.addWidget(cw)
 
         self.main_widget.setFocus()
